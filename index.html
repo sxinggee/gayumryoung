@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공룡 게임</title>
+    <style>
+        body { text-align: center; font-family: Arial, sans-serif; }
+        canvas { background: #f4f4f4; display: block; margin: 20px auto; }
+        #gameOverText {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: bold;
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>공룡 게임</h1>
+    <canvas id="gameCanvas" width="800" height="200"></canvas>
+    <div id="gameOverText">GAME OVER</div>
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const gameOverText = document.getElementById("gameOverText");
+
+        const dinoImg = new Image();
+        dinoImg.src = "u0c4TvXo_si7IwPcgYdL1XiGz8dhBHbgfCLSIEPm_AKmyzEYDe5oM3TBynQINBM89XE9gBdQ5uvOEvDMU-Uokg-2.webp";
+        const obstacleImg = new Image();
+        obstacleImg.src = "i16227524999.jpg";
+
+        let dino, obstacles, score, gameOver, frameCount, effects;
+
+        function init() {
+            dino = { x: 50, y: 150, width: 30, height: 30, dy: 0, gravity: 0.6, jumpPower: -10 };
+            obstacles = [];
+            effects = [];
+            score = 0;
+            frameCount = 0;
+            gameOver = false;
+            gameOverText.style.display = "none";
+        }
+
+        function jump() {
+            if (!gameOver) {
+                dino.dy = dino.jumpPower;
+                addJumpEffect();
+            }
+            if (gameOver) {
+                init();
+                gameLoop();
+            }
+        }
+
+        function addJumpEffect() {
+            for (let i = 0; i < 10; i++) {
+                effects.push({
+                    x: dino.x + dino.width / 2,
+                    y: dino.y + dino.height / 2,
+                    radius: Math.random() * 10 + 5,
+                    alpha: 1,
+                    dx: (Math.random() - 0.5) * 4,
+                    dy: (Math.random() - 0.5) * 4,
+                    color: `hsl(${Math.random() * 360}, 100%, 50%)`
+                });
+            }
+        }
+
+        function update() {
+            if (gameOver) return;
+            
+            dino.dy += dino.gravity;
+            dino.y += dino.dy;
+            
+            obstacles.forEach((obstacle, index) => {
+                obstacle.x -= 5;
+                if (obstacle.x + obstacle.width < 0) {
+                    obstacles.splice(index, 1);
+                }
+                if (
+                    dino.x < obstacle.x + obstacle.width &&
+                    dino.x + dino.width > obstacle.x &&
+                    dino.y < obstacle.y + obstacle.height &&
+                    dino.y + dino.height > obstacle.y
+                ) {
+                    gameOver = true;
+                    gameOverText.style.display = "block";
+                }
+            });
+
+            if (Math.random() < 0.02) {
+                obstacles.push({ x: 800, y: 170, width: 20, height: 30 });
+            }
+
+            frameCount++;
+            if (frameCount % 6 === 0) {
+                score += 1;
+            }
+
+            effects.forEach((effect, index) => {
+                effect.x += effect.dx;
+                effect.y += effect.dy;
+                effect.radius *= 0.95;
+                effect.alpha -= 0.05;
+                if (effect.alpha <= 0) {
+                    effects.splice(index, 1);
+                }
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
+            
+            obstacles.forEach(obstacle => {
+                ctx.drawImage(obstacleImg, obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+            });
+            
+            ctx.fillStyle = "black";
+            ctx.fillText("Score: " + score, 700, 20);
+            
+            effects.forEach(effect => {
+                ctx.beginPath();
+                ctx.arc(effect.x, effect.y, effect.radius, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${effect.color}, ${effect.alpha})`;
+                ctx.fill();
+            });
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            if (!gameOver) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+
+        document.addEventListener("keydown", (e) => {
+            if (e.code === "Space") jump();
+        });
+
+        init();
+        gameLoop();
+    </script>
+</body>
+</html>
